@@ -539,17 +539,12 @@ h1 {
     gap: 8px;
     justify-content: center;
     padding: 0;
-}
-
-.quick-options-separator {
-    height: 3px;
-    background-color: var(--text);
-    opacity: 0.2;
-    margin: 5px 0;
+    width: 100%;
+    min-width: 0; /* Allow container to shrink below content size */
 }
 
 .quick-action {
-    padding: 8px 16px;
+    padding: 6px 12px;
     background-color: var(--primary);
     border: 3px solid var(--text);
     color: var(--bg-color);
@@ -558,7 +553,12 @@ h1 {
     cursor: pointer;
     box-shadow: 3px 3px 0 var(--text);
     transition: all 0.1s ease;
+    flex: 0 1 auto;
     white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
 }
 
 .quick-action:hover {
@@ -582,6 +582,12 @@ h1 {
     background-color: #c41e3a;  /* A more traditional red color */
     width: 100%;
     max-width: 200px;
+    margin-bottom: 50px;
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+    min-width: 0; /* Allow button to shrink below content size */
 }
 
 .danger-action:hover {
@@ -1025,7 +1031,16 @@ h1 {
     }
 
     .quick-options-group {
-        grid-template-columns: 1fr; /* Stack quick options vertically */
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .quick-action {
+        width: 100%;
+        text-align: center;
+        padding: 8px;
+        font-size: 0.65em;
+        min-width: 0;
     }
 
     .fish-details-image {
@@ -1094,6 +1109,13 @@ h1 {
 
     .habitat-bar-container {
         width: 100%;
+    }
+
+    .danger-action {
+        width: 100%;
+        max-width: none;
+        margin: 0 0 50px 0;
+        padding: 8px;
     }
 }
 
