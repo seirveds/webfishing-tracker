@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fish Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-content">
+            <h1>Webfishing Fish Tracker</h1>
+        </div>
+    </header>
+    <div id="app">
+        <div class="main-tabs">
+            <div class="main-tab-buttons">
+                <button class="main-tab-button active" data-tab="collection">Collection</button>
+                <button class="main-tab-button" data-tab="completion">Completion</button>
+                <button class="help-button" id="helpButton">?</button>
+            </div>
+            <div class="main-tab-content">
+                <div class="main-tab-panel active" id="collection-tab">
+                    <div class="container">
+                        <div class="tabs">
+                            <div class="tab-buttons"></div>
+                            <div class="tab-content"></div>
+                        </div>
+                        <div class="quick-options-wrapper">
+                            <button class="quick-options-toggle">
+                                Quick Options ▼
+                            </button>
+                            <div class="quick-options-panel">
+                                <div class="quick-options-content">
+                                    <h3 class="quick-options-header">Mark all as caught:</h3>
+                                    <div class="quick-options-group">
+                                        <button class="quick-action quality-action" data-quality="0">Normal</button>
+                                        <button class="quick-action quality-action" data-quality="1">Shining</button>
+                                        <button class="quick-action quality-action" data-quality="2">Glistening</button>
+                                        <button class="quick-action quality-action" data-quality="3">Opulent</button>
+                                        <button class="quick-action quality-action" data-quality="4">Radiant</button>
+                                        <button class="quick-action quality-action" data-quality="5">Alpha</button>
+                                    </div>
+                                    <div class="quick-options-separator"></div>
+                                    <div class="quick-options-group">
+                                        <button class="quick-action danger-action" data-action="deselect-all">Clear All</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main-tab-panel" id="completion-tab">
+                    <h2>Completion Progress</h2>
+                    <div class="completion-content">
+                        <h3 class="completion-subtitle">By Quality Level</h3>
+                        <div class="progress-bars">
+                            <!-- Progress bars will be added here dynamically -->
+                        </div>
+                        <h3 class="completion-subtitle">By Habitat</h3>
+                        <div class="habitat-progress">
+                            <!-- Habitat progress will be added here dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="popup-overlay" id="confirmPopup">
+        <div class="popup-content">
+            <p>Are you sure you want to deselect all fish? You can not undo this action</p>
+            <div class="popup-buttons">
+                <button class="popup-button" id="confirmYes">Yes</button>
+                <button class="popup-button" id="confirmNo">No</button>
+            </div>
+        </div>
+    </div>
+    <div class="popup-overlay" id="fishDetailsPopup">
+        <div class="popup-content">
+            <h3 class="fish-details-title"></h3>
+            <div class="fish-details-content">
+                <!-- More details will be added here later -->
+            </div>
+            <div class="popup-buttons">
+                <button class="popup-button" id="fishDetailsClose">Close</button>
+            </div>
+        </div>
+    </div>
+    <div class="popup-overlay" id="helpPopup">
+        <div class="popup-content">
+            <h3>How to Use Fish Tracker</h3>
+            <div class="help-content">
+                <p>Track your fishing progress by marking the quality of the fish you caught.</p>
+
+                <p>Click the colored squares mark a fish as caught for that quality level. Click it again to unmark it.</p>
+
+                <p>Additional Features:</p>
+                <ul>
+                    <li>Use Quick Options at the bottom of the page to mark all fish in a category</li>
+                    <li>Click the fish for detailed information</li>
+                    <li>Check your completion progress in the Completion tab</li>
+                </ul>
+            </div>
+            <div class="popup-buttons">
+                <button class="popup-button" id="helpClose">Close</button>
+            </div>
+        </div>
+    </div>
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <p class="footer-text">Fish Tracker v1.0</p>
+                <p class="footer-text">Made with <span class="pixel-heart">♥</span> for Webfishing</p>
+            </div>
+            <div class="footer-section">
+                <p class="footer-text">Created by <a href="https://github.com/seirveds" target="_blank">seirveds</a></p>
+            </div>
+        </div>
+    </footer>
+    <script src="app.js"></script>
+</body>
+</html>
