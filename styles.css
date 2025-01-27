@@ -167,7 +167,7 @@ h1 {
 }
 
 .main-tab-button:hover {
-    background-color: var(--primary);
+    background-color: var(--accent);
 }
 
 .main-tab-button.active {
@@ -440,33 +440,34 @@ h1 {
 .progress-bars {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 5px;
     padding: 20px;
     max-width: 100%;
 }
 
 .progress-item {
     display: flex;
+    flex-direction: row;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
     width: 100%;
+    margin-bottom: 5px;
 }
 
 .progress-label {
     font-family: 'Press Start 2P', cursive;
-    font-size: 12px;
+    font-size: 0.8em;
+    color: var(--text);
     min-width: 180px;
     text-align: right;
-    flex-shrink: 0;
 }
 
 .progress-bar-container {
-    flex-grow: 1;
     height: 24px;
     background-color: rgba(0, 0, 0, 0.1);
-    border: 2px solid var(--text);
+    border: 3px solid var(--text);
     position: relative;
-    width: auto;
+    flex-grow: 1;
     min-width: 100px;
 }
 
@@ -477,12 +478,19 @@ h1 {
     transition: width 0.3s ease-out;
 }
 
-.progress-value {
+.progress-percentage {
     font-family: 'Press Start 2P', cursive;
-    font-size: 12px;
-    margin-left: 10px;
-    min-width: 70px;
-    flex-shrink: 0;
+    font-size: 0.8em;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text);
+    text-shadow: 
+        1px 1px 0 var(--bg-color),
+        -1px 1px 0 var(--bg-color),
+        1px -1px 0 var(--bg-color),
+        -1px -1px 0 var(--bg-color);
 }
 
 .quick-options-wrapper {
@@ -501,7 +509,6 @@ h1 {
     font-family: 'Press Start 2P', cursive;
     font-size: 0.8em;
     cursor: pointer;
-    text-align: center;
     transition: background-color 0.2s;
 }
 
@@ -675,33 +682,34 @@ h1 {
 .habitat-progress {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 5px;
     padding: 20px;
     max-width: 100%;
 }
 
 .habitat-item {
     display: flex;
+    flex-direction: row;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
     width: 100%;
+    margin-bottom: 5px;
 }
 
 .habitat-label {
     font-family: 'Press Start 2P', cursive;
-    font-size: 12px;
+    font-size: 0.8em;
+    color: var(--text);
     min-width: 180px;
     text-align: right;
-    flex-shrink: 0;
 }
 
 .habitat-bar-container {
-    flex-grow: 1;
     height: 24px;
     background-color: rgba(0, 0, 0, 0.1);
-    border: 2px solid var(--text);
+    border: 3px solid var(--text);
     position: relative;
-    width: auto;
+    flex-grow: 1;
     min-width: 100px;
 }
 
@@ -712,12 +720,19 @@ h1 {
     transition: width 0.3s ease-out;
 }
 
-.habitat-percentage {
+.habitat-value {
     font-family: 'Press Start 2P', cursive;
-    font-size: 12px;
-    margin-left: 10px;
-    min-width: 70px;
-    flex-shrink: 0;
+    font-size: 0.8em;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text);
+    text-shadow: 
+        1px 1px 0 var(--bg-color),
+        -1px 1px 0 var(--bg-color),
+        1px -1px 0 var(--bg-color),
+        -1px -1px 0 var(--bg-color);
 }
 
 .site-footer {

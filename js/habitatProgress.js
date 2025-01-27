@@ -17,7 +17,7 @@ export function createHabitatProgress() {
             <div class="habitat-label">${habitatName}</div>
             <div class="habitat-bar-container">
                 <div class="habitat-bar" style="width: 0%"></div>
-                <div class="habitat-percentage">0.0%</div>
+                <div class="habitat-value">0.0%</div>
             </div>
         `;
         container.appendChild(progressItem);
@@ -46,7 +46,7 @@ export function updateHabitatProgress() {
 
         const percentage = totalPossible > 0 ? (activeCount / totalPossible * 100).toFixed(1) : '0.0';
         const bar = item.querySelector('.habitat-bar');
-        const percentageText = item.querySelector('.habitat-percentage');
+        const percentageText = item.querySelector('.habitat-value');
         
         if (bar && percentageText) {
             bar.style.width = `${percentage}%`;
