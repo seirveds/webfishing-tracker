@@ -14,6 +14,7 @@
     --highlight: #d4945b;  /* Soft orange */
     --alt-green: #7fa670;  /* Sage green */
     --circle-color: #7fa670;  /* Sage green */
+    --bar-color: #008583;  /* Bar color */
 }
 
 html {
@@ -471,6 +472,8 @@ h1 {
 
 .progress-bar {
     height: 100%;
+    background-color: var(--bar-color, var(--primary));
+    width: 0;
     transition: width 0.3s ease-out;
 }
 
@@ -486,13 +489,13 @@ h1 {
     margin-top: 20px;
     border: 4px solid var(--text);
     box-shadow: 4px 4px 0 var(--text);
-    background-color: var(--alt-green);
+    background-color: var(--bg-color);
 }
 
 .quick-options-toggle {
     width: 100%;
     padding: 12px;
-    background-color: var(--alt-green);
+    background-color: var(--primary);
     border: none;
     color: var(--bg-color);
     font-family: 'Press Start 2P', cursive;
@@ -503,25 +506,21 @@ h1 {
 }
 
 .quick-options-toggle:hover {
-    background-color: var(--primary);
+    background-color: var(--accent);
 }
 
 .quick-options-panel {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease-out;
-}
-
-.quick-options-panel.expanded {
-    max-height: 200px;
+    display: none;
     border-top: 4px solid var(--text);
 }
 
+.quick-options-panel.show {
+    display: block;
+}
+
 .quick-options-content {
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+    padding: 20px;
+    background-color: var(--alt-green);
 }
 
 .quick-options-header {
@@ -529,8 +528,7 @@ h1 {
     font-size: 0.8em;
     color: var(--text);
     text-align: center;
-    margin: 0;
-    padding: 8px 0 0 0;
+    margin-bottom: 15px;
 }
 
 .quick-options-group {
@@ -538,33 +536,29 @@ h1 {
     flex-wrap: wrap;
     gap: 8px;
     justify-content: center;
-    padding: 0;
-    width: 100%;
-    min-width: 0; /* Allow container to shrink below content size */
+    margin-bottom: 15px;
+}
+
+.quick-options-separator {
+    height: 4px;
+    background-color: var(--text);
+    margin: 15px 0;
 }
 
 .quick-action {
-    padding: 6px 12px;
-    background-color: var(--primary);
+    padding: 8px 16px;
     border: 3px solid var(--text);
-    color: var(--bg-color);
     font-family: 'Press Start 2P', cursive;
     font-size: 0.7em;
     cursor: pointer;
     box-shadow: 3px 3px 0 var(--text);
     transition: all 0.1s ease;
-    flex: 0 1 auto;
-    white-space: nowrap;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    box-sizing: border-box;
+    color: var(--bg-color);
 }
 
 .quick-action:hover {
     transform: translate(2px, 2px);
     box-shadow: 1px 1px 0 var(--text);
-    background-color: var(--accent);
 }
 
 .quality-action[data-quality="0"] { background-color: #d5aa73; }
@@ -574,24 +568,10 @@ h1 {
 .quality-action[data-quality="4"] { background-color: #e69d00; }
 .quality-action[data-quality="5"] { background-color: #cd0462; }
 
-.quality-action:hover {
-    background-color: var(--accent) !important;
-}
-
 .danger-action {
-    background-color: #c41e3a;  /* A more traditional red color */
+    background-color: #c41e3a;
     width: 100%;
     max-width: 200px;
-    margin-bottom: 50px;
-    box-sizing: border-box;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex-shrink: 1;
-    min-width: 0; /* Allow button to shrink below content size */
-}
-
-.danger-action:hover {
-    background-color: #e62e4c !important;  /* Brighter red on hover */
 }
 
 .popup-overlay {
@@ -697,19 +677,22 @@ h1 {
     flex-direction: column;
     gap: 20px;
     padding: 20px;
+    max-width: 100%;
 }
 
 .habitat-item {
     display: flex;
     align-items: center;
     gap: 20px;
+    width: 100%;
 }
 
-.habitat-name {
+.habitat-label {
     font-family: 'Press Start 2P', cursive;
     font-size: 12px;
-    width: 180px;
+    min-width: 180px;
     text-align: right;
+    flex-shrink: 0;
 }
 
 .habitat-bar-container {
@@ -718,12 +701,14 @@ h1 {
     background-color: rgba(0, 0, 0, 0.1);
     border: 2px solid var(--text);
     position: relative;
-    width: 300px;
+    width: auto;
+    min-width: 100px;
 }
 
 .habitat-bar {
     height: 100%;
     background-color: var(--primary);
+    width: 0;
     transition: width 0.3s ease-out;
 }
 
@@ -732,7 +717,7 @@ h1 {
     font-size: 12px;
     margin-left: 10px;
     min-width: 70px;
-    color: var(--text);
+    flex-shrink: 0;
 }
 
 .site-footer {
@@ -808,21 +793,18 @@ h1 {
     text-align: center;
 }
 
-.fish-details-content {
-    padding: 20px;
-}
-
 .fish-details-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 20px;
+    padding: 20px;
 }
 
 .fish-details-image {
-    width: 150px;
-    height: 150px;
-    object-fit: contain;
+    max-width: 200px;
+    height: auto;
+    image-rendering: pixelated;
 }
 
 .fish-details-info {
@@ -836,16 +818,26 @@ h1 {
     display: flex;
     flex-direction: column;
     gap: 5px;
+    text-align: center;
 }
 
 .detail-label {
-    font-weight: bold;
-    color: #666;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.8em;
+    color: var(--text);
+    opacity: 0.8;
 }
 
 .detail-value {
-    margin-left: 15px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.9em;
+    color: var(--text);
     line-height: 1.4;
+}
+
+.detail-value em {
+    font-style: italic;
+    color: var(--accent);
 }
 
 .wiki-link {
@@ -1101,7 +1093,7 @@ h1 {
         gap: 5px;
     }
 
-    .habitat-name {
+    .habitat-label {
         width: 100%;
         text-align: left;
         font-size: 9px;
