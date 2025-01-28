@@ -4,7 +4,7 @@ import { createProgressBars, updateProgressBars, updateAllProgress } from './js/
 import { createHabitatProgress, updateHabitatProgress } from './js/habitatProgress.js';
 import { switchMainTab, createTabs } from './js/tabs.js';
 import { loadFishData } from './js/fishData.js';
-import { saveFishState, loadFishState } from './js/state.js';
+import { saveFishState, loadFishState, getCookie } from './js/state.js';
 import { 
     createToggleCircles, 
     createFishTable, 
@@ -452,6 +452,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
+// Store fish data for filtering
+let fishData = null;
+
 // Initialize the application
 async function initializeApp() {
     const data = await loadFishData();
@@ -459,6 +462,9 @@ async function initializeApp() {
         console.error('Failed to load fish data');
         return;
     }
+
+    // Store fish data globally
+    fishData = data;
 
     // Create tabs and initialize UI
     createTabs(data);
@@ -500,28 +506,95 @@ async function initializeApp() {
         updateToggleText();
     });
 
-    // Set up quick actions
-    quickActions.forEach(action => {
-        action.addEventListener('click', () => {
-            const actionType = action.dataset.action;
+    // Filters functionality
+    const filtersToggle = document.querySelector('.filters-toggle');
+    const filtersPanel = document.querySelector('.filters-panel');
+    const filterButton = document.querySelector('.filter-button');
+
+    // Update filters toggle text based on panel state
+    function updateFiltersToggleText() {
+        filtersToggle.textContent = filtersPanel.classList.contains('show') 
+            ? 'Filters ▲' 
+            : 'Filters ▼';
+    }
+
+    // Toggle filters panel on button click
+    filtersToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        filtersPanel.classList.toggle('show');
+        updateFiltersToggleText();
+    });
+
+    // Handle filter button click
+    filterButton.addEventListener('click', () => {
+        filterButton.classList.toggle('active');
+        applyFilter();
+    });
+
+    function applyFilter() {
+        if (!fishData) return;
+        
+        const hideAllQualities = filterButton.classList.contains('active');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+
+        // Get saved states from cookie
+        const savedStates = JSON.parse(getCookie('fishRarityStates') || '{}');
+
+        tabPanels.forEach(panel => {
+            const habitat = panel.getAttribute('data-habitat');
+            const habitatData = Object.values(fishData.habitats).find(h => h.name === habitat);
             
-            if (actionType === 'deselect-all') {
-                const confirmPopup = document.getElementById('confirmPopup');
-                confirmPopup.style.display = 'flex';
-                
-                document.getElementById('confirmYes').onclick = () => {
-                    deselectAllFish();
-                    confirmPopup.style.display = 'none';
-                };
-                
-                document.getElementById('confirmNo').onclick = () => {
-                    confirmPopup.style.display = 'none';
-                };
+            if (!habitatData) return;
+
+            if (hideAllQualities) {
+                const fishCells = panel.querySelectorAll('.fish-cell');
+                // Get all fish that are not fully caught
+                const visibleFish = Array.from(fishCells).filter(cell => {
+                    const fishName = cell.querySelector('.fish-name')?.textContent;
+                    if (!fishName || !savedStates[fishName]) return true;
+                    return !savedStates[fishName].every(state => state === true);
+                }).map(cell => {
+                    return {
+                        name: cell.querySelector('.fish-name').textContent,
+                        icon: cell.querySelector('.fish-image').src
+                    };
+                });
+
+                // Clear and recreate the table with filtered fish
+                panel.innerHTML = '';
+                const table = createFishTable(visibleFish, habitat);
+                panel.appendChild(table);
             } else {
-                const qualityIndex = parseInt(action.dataset.quality);
-                selectQualityLevel(qualityIndex);
+                // Show all fish when filter is off
+                panel.innerHTML = '';
+                const table = createFishTable(habitatData.fish, habitat);
+                panel.appendChild(table);
             }
         });
+
+        // Restore fish states from cookie after recreating tables
+        document.querySelectorAll('.fish-cell').forEach(cell => {
+            const fishName = cell.querySelector('.fish-name')?.textContent;
+            if (fishName && savedStates[fishName]) {
+                const circles = cell.querySelectorAll('.toggle-circle');
+                savedStates[fishName].forEach((isActive, index) => {
+                    if (isActive) circles[index].classList.add('active');
+                });
+            }
+        });
+    }
+
+    // Close panels when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!quickOptionsPanel.contains(e.target) && !quickOptionsToggle.contains(e.target)) {
+            quickOptionsPanel.classList.remove('show');
+            updateToggleText();
+        }
+        if (!filtersPanel.contains(e.target) && !filtersToggle.contains(e.target)) {
+            filtersPanel.classList.remove('show');
+            updateFiltersToggleText();
+        }
     });
 
     // Handle window resize for responsive layout
