@@ -4,7 +4,7 @@ import { createProgressBars, updateProgressBars, updateAllProgress } from './js/
 import { createHabitatProgress, updateHabitatProgress } from './js/habitatProgress.js';
 import { switchMainTab, createTabs } from './js/tabs.js';
 import { loadFishData } from './js/fishData.js';
-import { setCookie, getCookie, saveFishState, loadFishState } from './js/state.js';
+import { saveFishState, loadFishState } from './js/state.js';
 import { 
     createToggleCircles, 
     createFishTable, 
