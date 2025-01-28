@@ -22,6 +22,7 @@ export function createToggleCircles() {
                     updateAllProgress();
                 }
                 saveFishState();
+                updateRemainingFish();
             });
         });
         container.appendChild(circle);
@@ -125,7 +126,7 @@ export function showFishDetails(fish) {
     const title = popup.querySelector('.fish-details-title');
     const content = popup.querySelector('.fish-details-content');
     
-    title.textContent = fish.name;
+    title.innerHTML = `${fish.name}${fish.Info && fish.Info['Scientific Name'] ? `<div class="scientific-name"><em>${fish.Info['Scientific Name']}</em></div>` : ''}`;
     
     // Create content with image and details
     content.innerHTML = '';
@@ -148,25 +149,11 @@ export function showFishDetails(fish) {
     info.className = 'fish-details-info';
     
     if (fish.Info) {
-        // Add scientific name if available
-        if (fish.Info['Scientific Name']) {
-            const scientific = document.createElement('div');
-            scientific.className = 'detail-item';
-            scientific.innerHTML = `
-                <div class="detail-label">Scientific Name:</div>
-                <div class="detail-value"><em>${fish.Info['Scientific Name']}</em></div>
-            `;
-            info.appendChild(scientific);
-        }
-        
         // Add flavor text if available
         if (fish.Info['Flavor Text']) {
             const flavor = document.createElement('div');
-            flavor.className = 'detail-item';
-            flavor.innerHTML = `
-                <div class="detail-label">Description:</div>
-                <div class="detail-value">${fish.Info['Flavor Text']}</div>
-            `;
+            flavor.className = 'detail-item flavor-text';
+            flavor.innerHTML = `<div class="detail-value">${fish.Info['Flavor Text']}</div>`;
             info.appendChild(flavor);
         }
         
@@ -205,7 +192,80 @@ export function showFishDetails(fish) {
     
     container.appendChild(info);
     content.appendChild(container);
+    
+    // Add wiki link if available
+    if (fish.page_url) {
+        // Remove any existing wiki buttons first
+        const existingWikiButtons = popup.querySelectorAll('.wiki-button');
+        existingWikiButtons.forEach(button => button.remove());
+
+        const wikiLink = document.createElement('a');
+        wikiLink.href = fish.page_url;
+        wikiLink.target = "_blank";
+        wikiLink.className = 'popup-button wiki-button';
+        wikiLink.textContent = "View on Wiki";
+        
+        // Insert before the close button
+        const buttonsContainer = popup.querySelector('.popup-buttons');
+        const closeButton = popup.querySelector('#fishDetailsClose');
+        buttonsContainer.insertBefore(wikiLink, closeButton);
+    }
+    
     popup.style.display = 'flex';
+}
+
+// Function to update remaining fish
+export function updateRemainingFish() {
+    const remainingList = document.querySelector('.remaining-list');
+    if (!remainingList) return;
+
+    remainingList.innerHTML = ''; // Clear existing list
+    
+    // Get all fish cells and their status
+    const fishCells = document.querySelectorAll('.fish-cell');
+    const remainingFish = [];
+
+    fishCells.forEach(cell => {
+        const fishName = cell.dataset.fish;
+        const habitat = cell.closest('.tab-panel').dataset.habitat;
+        const activeCircles = cell.querySelectorAll('.toggle-circle.active');
+        const totalCircles = cell.querySelectorAll('.toggle-circle');
+        
+        if (activeCircles.length < totalCircles.length) {
+            const remainingQualities = [];
+            cell.querySelectorAll('.toggle-circle').forEach((circle, index) => {
+                if (!circle.classList.contains('active')) {
+                    remainingQualities.push(RARITY_LEVELS[index]);
+                }
+            });
+            
+            remainingFish.push({
+                name: fishName,
+                habitat: habitat,
+                qualities: remainingQualities
+            });
+        }
+    });
+
+    // Sort remaining fish by habitat and name
+    remainingFish.sort((a, b) => {
+        if (a.habitat !== b.habitat) {
+            return a.habitat.localeCompare(b.habitat);
+        }
+        return a.name.localeCompare(b.name);
+    });
+
+    // Create list items
+    remainingFish.forEach(fish => {
+        const item = document.createElement('div');
+        item.className = 'remaining-fish-item';
+        item.innerHTML = `
+            <div class="remaining-fish-name">${fish.name}</div>
+            <div class="remaining-fish-habitat">${fish.habitat}</div>
+            <div class="remaining-fish-details">Missing: ${fish.qualities.join(', ')}</div>
+        `;
+        remainingList.appendChild(item);
+    });
 }
 
 // Quick Options functionality
@@ -219,6 +279,7 @@ export function deselectAllFish() {
             updateAllProgress();
         }
         saveFishState();
+        updateRemainingFish();
     });
 }
 
@@ -235,5 +296,6 @@ export function selectQualityLevel(qualityIndex) {
             updateAllProgress();
         }
         saveFishState();
+        updateRemainingFish();
     });
 }
