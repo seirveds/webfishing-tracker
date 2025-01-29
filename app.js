@@ -611,38 +611,42 @@ function applyFilter() {
 
 // Function to apply quality filters
 function applyQualityFilters() {
+    if (!fishData) return;
+
     const activeFilters = Array.from(document.querySelectorAll('.quality-filter.active'))
         .map(filter => parseInt(filter.dataset.quality));
     
     const savedStates = JSON.parse(getCookie('fishRarityStates') || '{}');
+    const tabPanels = document.querySelectorAll('.tab-panel');
 
-    // If no filters are active, show all fish
-    if (activeFilters.length === 0) {
-        document.querySelectorAll('.fish-cell').forEach(cell => {
-            cell.style.display = '';
-        });
-        return;
-    }
-
-    // Hide/show fish based on their saved states
-    document.querySelectorAll('.fish-cell').forEach(cell => {
-        const circles = cell.querySelectorAll('.toggle-circle');
-        const fishName = cell.querySelector('.fish-name')?.textContent;
+    tabPanels.forEach(panel => {
+        const habitat = panel.getAttribute('data-habitat');
+        const habitatData = Object.values(fishData.habitats).find(h => h.name === habitat);
         
-        // Show fish by default if it has no saved state
-        if (!fishName || !savedStates[fishName]) {
-            cell.style.display = '';
+        if (!habitatData) return;
+
+        // If no filters are active, show all fish
+        if (activeFilters.length === 0) {
+            panel.innerHTML = '';
+            const table = createFilteredFishTable(habitatData.fish, habitat, false);
+            panel.appendChild(table);
             return;
         }
 
-        // Check if any of the selected qualities are marked
-        const hasMarkedQuality = activeFilters.some(quality => {
-            return savedStates[fishName][quality] === true;
+        // Get all fish that don't have the filtered qualities marked
+        const visibleFish = habitatData.fish.filter(fish => {
+            if (!savedStates[fish.name]) return true;
+            return !activeFilters.some(quality => savedStates[fish.name][quality] === true);
         });
 
-        // Hide fish if it has any of the filtered qualities marked
-        cell.style.display = hasMarkedQuality ? 'none' : '';
+        // Recreate table with only visible fish
+        panel.innerHTML = '';
+        const table = createFilteredFishTable(visibleFish, habitat, true);
+        panel.appendChild(table);
     });
+
+    // Restore fish states
+    loadFishState();
 }
 
 // Add event listeners for quick actions
