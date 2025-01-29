@@ -609,6 +609,86 @@ function applyFilter() {
     });
 }
 
+// Function to apply quality filters
+function applyQualityFilters() {
+    const activeFilters = Array.from(document.querySelectorAll('.quality-filter.active'))
+        .map(filter => parseInt(filter.dataset.quality));
+    
+    const savedStates = JSON.parse(getCookie('fishRarityStates') || '{}');
+
+    // If no filters are active, show all fish
+    if (activeFilters.length === 0) {
+        document.querySelectorAll('.fish-cell').forEach(cell => {
+            cell.style.display = '';
+        });
+        return;
+    }
+
+    // Hide/show fish based on their saved states
+    document.querySelectorAll('.fish-cell').forEach(cell => {
+        const circles = cell.querySelectorAll('.toggle-circle');
+        const fishName = cell.querySelector('.fish-name')?.textContent;
+        
+        // Show fish by default if it has no saved state
+        if (!fishName || !savedStates[fishName]) {
+            cell.style.display = '';
+            return;
+        }
+
+        // Check if any of the selected qualities are marked
+        const hasMarkedQuality = activeFilters.some(quality => {
+            return savedStates[fishName][quality] === true;
+        });
+
+        // Hide fish if it has any of the filtered qualities marked
+        cell.style.display = hasMarkedQuality ? 'none' : '';
+    });
+}
+
+// Add event listeners for quick actions
+document.querySelectorAll('.quick-action.quality-action').forEach(action => {
+    action.addEventListener('click', () => {
+        const quality = parseInt(action.dataset.quality);
+        selectQualityLevel(quality);
+        saveFishState();
+        updateAllProgress();
+    });
+});
+
+// Add event listener for deselect-all
+document.querySelector('.quick-action[data-action="deselect-all"]').addEventListener('click', () => {
+    const confirmPopup = document.getElementById('confirmPopup');
+    confirmPopup.style.display = 'flex';
+
+    // Handle Yes button
+    document.getElementById('confirmYes').addEventListener('click', () => {
+        deselectAllFish();
+        saveFishState();
+        updateAllProgress();
+        confirmPopup.style.display = 'none';
+    });
+
+    // Handle No button
+    document.getElementById('confirmNo').addEventListener('click', () => {
+        confirmPopup.style.display = 'none';
+    });
+
+    // Close when clicking outside
+    confirmPopup.addEventListener('click', (e) => {
+        if (e.target === confirmPopup) {
+            confirmPopup.style.display = 'none';
+        }
+    });
+});
+
+// Add event listeners for quality filters
+document.querySelectorAll('.quality-filter').forEach(filter => {
+    filter.addEventListener('click', () => {
+        filter.classList.toggle('active');
+        applyQualityFilters();
+    });
+});
+
 // Initialize everything when the page loads
 async function initializeApp() {
     // Load fish data
@@ -642,77 +722,9 @@ async function initializeApp() {
         applyFilter();
     });
 
-    // Add event listeners for quick actions
-    quickActions.forEach(action => {
-        if (action.dataset.quality) {
-            action.addEventListener('click', () => {
-                const quality = parseInt(action.dataset.quality);
-                selectQualityLevel(quality);
-                saveFishState();
-                updateAllProgress();
-            });
-        } else if (action.dataset.action === 'deselect-all') {
-            action.addEventListener('click', () => {
-                const confirmPopup = document.getElementById('confirmPopup');
-                confirmPopup.style.display = 'flex';
-
-                // Handle Yes button
-                document.getElementById('confirmYes').addEventListener('click', () => {
-                    deselectAllFish();
-                    saveFishState();
-                    updateAllProgress();
-                    confirmPopup.style.display = 'none';
-                });
-
-                // Handle No button
-                document.getElementById('confirmNo').addEventListener('click', () => {
-                    confirmPopup.style.display = 'none';
-                });
-
-                // Close when clicking outside
-                confirmPopup.addEventListener('click', (e) => {
-                    if (e.target === confirmPopup) {
-                        confirmPopup.style.display = 'none';
-                    }
-                });
-            });
-        }
-    });
-
-    // Add event listeners for quality filters
-    document.querySelectorAll('.quality-filter').forEach(filter => {
-        filter.addEventListener('click', () => {
-            filter.classList.toggle('active');
-            applyQualityFilters();
-        });
-    });
-
     // Load saved states
     loadFishState();
     loadCollapsibleStates();
-}
-
-// Function to apply quality filters
-function applyQualityFilters() {
-    const activeFilters = Array.from(document.querySelectorAll('.quality-filter.active'))
-        .map(filter => parseInt(filter.dataset.quality));
-
-    document.querySelectorAll('.fish-cell').forEach(cell => {
-        const circles = Array.from(cell.querySelectorAll('.toggle-circle'));
-        const activeQualities = circles
-            .map((circle, index) => circle.classList.contains('active') ? index : -1)
-            .filter(index => index !== -1);
-
-        // If no filters are active, show all fish
-        if (activeFilters.length === 0) {
-            cell.style.display = '';
-            return;
-        }
-
-        // Hide fish that don't have any of the filtered qualities active
-        const hasActiveQuality = activeQualities.some(quality => activeFilters.includes(quality));
-        cell.style.display = hasActiveQuality ? '' : 'none';
-    });
 }
 
 // Start the application
