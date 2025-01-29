@@ -49,3 +49,59 @@ export function loadFishState() {
         }
     }
 }
+
+// Collapsible state management
+export function saveCollapsibleStates() {
+    const quickOptionsPanel = document.querySelector('.quick-options-panel');
+    const filtersPanel = document.querySelector('.filters-panel');
+    
+    const states = {
+        quickOptions: quickOptionsPanel?.classList.contains('show') || false,
+        filters: filtersPanel?.classList.contains('show') || false
+    };
+    setCookie('collapsibleStates', JSON.stringify(states));
+}
+
+export function loadCollapsibleStates() {
+    const savedStates = getCookie('collapsibleStates');
+    if (savedStates) {
+        const states = JSON.parse(savedStates);
+        const quickOptionsPanel = document.querySelector('.quick-options-panel');
+        const quickOptionsToggle = document.querySelector('.quick-options-toggle');
+        const filtersPanel = document.querySelector('.filters-panel');
+        const filtersToggle = document.querySelector('.filters-toggle');
+        
+        // Quick Options
+        if (quickOptionsPanel && quickOptionsToggle) {
+            quickOptionsPanel.classList.toggle('show', states.quickOptions);
+            quickOptionsToggle.textContent = states.quickOptions ? 'Quick Options ▲' : 'Quick Options ▼';
+        }
+        
+        // Filters
+        if (filtersPanel && filtersToggle) {
+            filtersPanel.classList.toggle('show', states.filters);
+            filtersToggle.textContent = states.filters ? 'Filters ▲' : 'Filters ▼';
+        }
+    }
+}
+
+// Helper functions for updating toggle text
+export function updateToggleText() {
+    const quickOptionsPanel = document.querySelector('.quick-options-panel');
+    const quickOptionsToggle = document.querySelector('.quick-options-toggle');
+    if (quickOptionsPanel && quickOptionsToggle) {
+        quickOptionsToggle.textContent = quickOptionsPanel.classList.contains('show') 
+            ? 'Quick Options ▲' 
+            : 'Quick Options ▼';
+    }
+}
+
+export function updateFiltersToggleText() {
+    const filtersPanel = document.querySelector('.filters-panel');
+    const filtersToggle = document.querySelector('.filters-toggle');
+    if (filtersPanel && filtersToggle) {
+        filtersToggle.textContent = filtersPanel.classList.contains('show') 
+            ? 'Filters ▲' 
+            : 'Filters ▼';
+    }
+}

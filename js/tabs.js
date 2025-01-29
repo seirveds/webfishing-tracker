@@ -1,5 +1,6 @@
 import { updateAllProgress } from './progressBars.js';
 import { createFishTable } from './fish.js';
+import { loadCollapsibleStates } from './state.js';
 
 // Tab management functionality
 export function switchMainTab(tabId) {
@@ -18,6 +19,9 @@ export function switchMainTab(tabId) {
     if (tabId === 'completion') {
         requestAnimationFrame(updateAllProgress);
     }
+
+    // Restore collapsible states
+    loadCollapsibleStates();
 }
 
 export function createTabs(data) {
@@ -32,6 +36,7 @@ export function createTabs(data) {
         const button = document.createElement('button');
         button.className = `tab-button ${index === 0 ? 'active' : ''}`;
         button.textContent = habitat.name;
+        button.dataset.habitat = habitat.name;
         button.addEventListener('click', () => switchTab(habitat.name));
         tabButtons.appendChild(button);
 
@@ -58,4 +63,7 @@ function switchTab(habitat) {
     document.querySelectorAll('.tab-panel').forEach(panel => {
         panel.classList.toggle('active', panel.id === `tab-${habitat.toLowerCase()}`);
     });
+
+    // Restore collapsible states
+    loadCollapsibleStates();
 }

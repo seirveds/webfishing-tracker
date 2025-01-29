@@ -120,6 +120,88 @@ export function createFishTable(fishes, habitat) {
     return table;
 }
 
+// Function to create filtered fish table
+export function createFilteredFishTable(fishes, habitat, skipEmptyCells = false) {
+    const table = document.createElement('table');
+    table.className = 'fish-table';
+    
+    // Get number of columns based on screen width
+    const cellsPerRow = habitat === 'Misc' ? 2 : getColumnsForScreenWidth();
+    
+    let currentRow;
+    fishes.forEach((fish, index) => {
+        if (index % cellsPerRow === 0) {
+            currentRow = document.createElement('tr');
+            table.appendChild(currentRow);
+        }
+        
+        const cell = document.createElement('td');
+        cell.className = 'fish-cell';
+        cell.style.width = `${100 / cellsPerRow}%`;
+
+        // Add click handler for the cell
+        cell.addEventListener('click', (e) => {
+            // Only show details if not clicking on circles or checkbox
+            if (!e.target.classList.contains('toggle-circle') && 
+                !e.target.classList.contains('fish-checkbox')) {
+                showFishDetails(fish);
+            }
+        });
+
+        // Create fish info container
+        const fishInfo = document.createElement('div');
+        fishInfo.className = 'fish-info';
+
+        // Add fish name first
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'fish-name';
+        nameSpan.textContent = fish.name;
+        fishInfo.appendChild(nameSpan);
+
+        // Add fish image second
+        const img = document.createElement('img');
+        img.src = fish.icon || 'placeholder.png';
+        img.alt = fish.name;
+        img.className = 'fish-image';
+        fishInfo.appendChild(img);
+
+        cell.appendChild(fishInfo);
+
+        // Add toggle circles last
+        const circles = createToggleCircles();
+        cell.appendChild(circles);
+
+        currentRow.appendChild(cell);
+    });
+
+    // Only add empty cells if not skipping them
+    if (!skipEmptyCells) {
+        const remainingCells = cellsPerRow - (fishes.length % cellsPerRow);
+        if (remainingCells !== cellsPerRow) {
+            for (let i = 0; i < remainingCells; i++) {
+                const cell = document.createElement('td');
+                cell.style.width = `${100 / cellsPerRow}%`;
+                const fishInfo = document.createElement('div');
+                fishInfo.className = 'fish-info';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'fish-name';
+                fishInfo.appendChild(nameSpan);
+                
+                cell.appendChild(fishInfo);
+                
+                // Add toggle circles to empty cells too
+                const circles = createToggleCircles();
+                cell.appendChild(circles);
+                
+                currentRow.appendChild(cell);
+            }
+        }
+    }
+    
+    return table;
+}
+
 // Function to show fish details
 export function showFishDetails(fish) {
     const popup = document.getElementById('fishDetailsPopup');
