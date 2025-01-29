@@ -644,17 +644,75 @@ async function initializeApp() {
 
     // Add event listeners for quick actions
     quickActions.forEach(action => {
-        action.addEventListener('click', () => {
-            const quality = parseInt(action.dataset.quality);
-            selectQualityLevel(quality);
-            saveFishState();
-            updateAllProgress();
+        if (action.dataset.quality) {
+            action.addEventListener('click', () => {
+                const quality = parseInt(action.dataset.quality);
+                selectQualityLevel(quality);
+                saveFishState();
+                updateAllProgress();
+            });
+        } else if (action.dataset.action === 'deselect-all') {
+            action.addEventListener('click', () => {
+                const confirmPopup = document.getElementById('confirmPopup');
+                confirmPopup.style.display = 'flex';
+
+                // Handle Yes button
+                document.getElementById('confirmYes').addEventListener('click', () => {
+                    deselectAllFish();
+                    saveFishState();
+                    updateAllProgress();
+                    confirmPopup.style.display = 'none';
+                });
+
+                // Handle No button
+                document.getElementById('confirmNo').addEventListener('click', () => {
+                    confirmPopup.style.display = 'none';
+                });
+
+                // Close when clicking outside
+                confirmPopup.addEventListener('click', (e) => {
+                    if (e.target === confirmPopup) {
+                        confirmPopup.style.display = 'none';
+                    }
+                });
+            });
+        }
+    });
+
+    // Add event listeners for quality filters
+    document.querySelectorAll('.quality-filter').forEach(filter => {
+        filter.addEventListener('click', () => {
+            filter.classList.toggle('active');
+            applyQualityFilters();
         });
     });
 
     // Load saved states
     loadFishState();
     loadCollapsibleStates();
+}
+
+// Function to apply quality filters
+function applyQualityFilters() {
+    const activeFilters = Array.from(document.querySelectorAll('.quality-filter.active'))
+        .map(filter => parseInt(filter.dataset.quality));
+
+    document.querySelectorAll('.fish-cell').forEach(cell => {
+        const circles = Array.from(cell.querySelectorAll('.toggle-circle'));
+        const activeQualities = circles
+            .map((circle, index) => circle.classList.contains('active') ? index : -1)
+            .filter(index => index !== -1);
+
+        // If no filters are active, show all fish
+        if (activeFilters.length === 0) {
+            cell.style.display = '';
+            return;
+        }
+
+        // Hide fish that don't have any of the filtered qualities active
+        const hasActiveQuality = activeQualities.some(quality => activeFilters.includes(quality));
+        cell.style.display = hasActiveQuality ? '' : 'none';
+    });
 }
 
 // Start the application
