@@ -3,44 +3,216 @@ import { RARITY_LEVELS } from './js/config.js';
 import { createProgressBars, updateProgressBars, updateAllProgress } from './js/progressBars.js';
 import { createHabitatProgress, updateHabitatProgress } from './js/habitatProgress.js';
 import { switchMainTab, createTabs } from './js/tabs.js';
-import { loadFishData } from './js/fishData.js';
-import { 
-    saveFishState, 
-    loadFishState, 
-    getCookie, 
-    setCookie,
-    saveCollapsibleStates,
-    loadCollapsibleStates,
-    updateToggleText,
-    updateFiltersToggleText
-} from './js/state.js';
-import { 
-    createToggleCircles, 
-    createFishTable,
-    createFilteredFishTable,
-    showFishDetails, 
-    deselectAllFish, 
-    selectQualityLevel 
-} from './js/fish.js';
+import { saveFishState, loadFishState, loadCollapsibleStates, getCookie } from './js/state.js';
+import { createFishTable, showFishDetails, getColumnsForScreenWidth } from './js/fish.js';
+
+let fishData = null;
+
+// Initialize everything when the page loads
+function initializeApp() {
+    // Load fish data
+    fetch('fish.json')
+        .then(response => response.json())
+        .then(data => {
+            // Store fish data globally
+            fishData = data;
+            
+            // Create tabs with fish data
+            createTabs(data);
+            
+            // Create progress bars
+            createProgressBars();
+            createHabitatProgress();
+            
+            // Add event listeners for tab switching
+            document.querySelectorAll('.main-tab-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    switchMainTab(button.dataset.tab);
+                });
+            });
+            
+            // Load saved states after DOM is ready
+            setTimeout(() => {
+                loadFishState();
+                loadCollapsibleStates();
+                
+                // Initial progress update
+                updateAllProgress();
+            }, 0);
+        })
+        .catch(error => console.error('Error loading fish data:', error));
+}
+
+// Start the application
+window.addEventListener('load', initializeApp);
 
 // Help modal functionality
 document.addEventListener('DOMContentLoaded', () => {
     const helpButton = document.getElementById('helpButton');
-    const helpPopup = document.getElementById('helpPopup');
-    const helpClose = document.getElementById('helpClose');
+    const helpModal = document.getElementById('helpModal');
+    const closeButton = document.querySelector('.close-button');
 
-    helpButton.addEventListener('click', () => {
-        helpPopup.style.display = 'flex';
-    });
+    if (helpButton && helpModal && closeButton) {
+        helpButton.addEventListener('click', () => {
+            helpModal.style.display = 'block';
+        });
 
-    helpClose.addEventListener('click', () => {
-        helpPopup.style.display = 'none';
-    });
+        closeButton.addEventListener('click', () => {
+            helpModal.style.display = 'none';
+        });
 
-    helpPopup.addEventListener('click', (e) => {
-        if (e.target === helpPopup) {
-            helpPopup.style.display = 'none';
+        window.addEventListener('click', (event) => {
+            if (event.target === helpModal) {
+                helpModal.style.display = 'none';
+            }
+        });
+    }
+});
+
+// Quick options functionality
+document.addEventListener('DOMContentLoaded', () => {
+    const quickOptionsToggle = document.querySelector('.quick-options-toggle');
+    const quickOptionsPanel = document.querySelector('.quick-options-panel');
+    const filtersToggle = document.querySelector('.filters-toggle');
+    const filtersPanel = document.querySelector('.filters-panel');
+    const filterButton = document.querySelector('.filter-button');
+
+    if (quickOptionsToggle && quickOptionsPanel) {
+        quickOptionsToggle.addEventListener('click', () => {
+            quickOptionsPanel.classList.toggle('show');
+            quickOptionsToggle.textContent = quickOptionsPanel.classList.contains('show') 
+                ? 'Quick Options ▲' 
+                : 'Quick Options ▼';
+        });
+    }
+
+    if (filtersToggle && filtersPanel) {
+        filtersToggle.addEventListener('click', () => {
+            filtersPanel.classList.toggle('show');
+            filtersToggle.textContent = filtersPanel.classList.contains('show') 
+                ? 'Filters ▲' 
+                : 'Filters ▼';
+        });
+    }
+
+    if (filterButton) {
+        filterButton.addEventListener('click', () => {
+            filterButton.classList.toggle('active');
+            applyFilter();
+        });
+    }
+});
+
+// Function to apply fish filter
+function applyFilter() {
+    if (!fishData) return;
+    
+    const filterButton = document.querySelector('.filter-button[data-filter="all-qualities"]');
+    const isActive = filterButton.classList.contains('active');
+    const savedStates = JSON.parse(getCookie('fishRarityStates') || '{}');
+    
+    document.querySelectorAll('.tab-panel').forEach(panel => {
+        const habitat = panel.getAttribute('data-habitat');
+        const habitatData = Object.values(fishData.habitats).find(h => h.name === habitat);
+        
+        if (!habitatData) return;
+
+        if (isActive) {
+            // Filter out fully caught fish
+            const visibleFish = habitatData.fish.filter(fish => {
+                if (!savedStates[fish.name]) return true;
+                return !savedStates[fish.name].every(state => state === true);
+            });
+
+            // Recreate table with filtered fish
+            panel.innerHTML = '';
+            if (visibleFish.length > 0) {
+                const table = createFishTable(visibleFish, habitat, true);
+                panel.appendChild(table);
+            } else {
+                const message = document.createElement('div');
+                message.className = 'empty-filter-message';
+                message.textContent = 'All fish caught!';
+                message.style.textAlign = 'center';
+                message.style.padding = '20px';
+                message.style.fontFamily = "'Press Start 2P', cursive";
+                panel.appendChild(message);
+            }
+        } else {
+            // Show all fish
+            panel.innerHTML = '';
+            const table = createFishTable(habitatData.fish, habitat, false);
+            panel.appendChild(table);
         }
+    });
+
+    // Restore fish states
+    loadFishState();
+}
+
+// Function to apply quality filters
+function applyQualityFilters() {
+    if (!fishData) return;
+
+    const activeFilters = Array.from(document.querySelectorAll('.quality-filter.active'))
+        .map(filter => ({
+            quality: parseInt(filter.dataset.quality),
+            name: filter.textContent.trim()
+        }));
+    
+    const savedStates = JSON.parse(getCookie('fishRarityStates') || '{}');
+    
+    document.querySelectorAll('.tab-panel').forEach(panel => {
+        const habitat = panel.getAttribute('data-habitat');
+        const habitatData = Object.values(fishData.habitats).find(h => h.name === habitat);
+        
+        if (!habitatData) return;
+
+        if (activeFilters.length === 0) {
+            // Show all fish when no filters are active
+            panel.innerHTML = '';
+            const table = createFishTable(habitatData.fish, habitat, false);
+            panel.appendChild(table);
+        } else {
+            // Filter fish based on active quality filters
+            // Show fish that don't have ANY of the selected qualities marked
+            const visibleFish = habitatData.fish.filter(fish => {
+                if (!savedStates[fish.name]) return true;
+                return activeFilters.every(filter => !savedStates[fish.name][filter.quality]);
+            });
+
+            // Recreate table with filtered fish
+            panel.innerHTML = '';
+            if (visibleFish.length > 0) {
+                const table = createFishTable(visibleFish, habitat, true);
+                panel.appendChild(table);
+            } else {
+                const message = document.createElement('div');
+                message.className = 'empty-filter-message';
+                const qualityNames = activeFilters.map(f => f.name);
+                const formattedQualities = qualityNames.length > 1 
+                    ? qualityNames.slice(0, -1).join(', ') + ' & ' + qualityNames[qualityNames.length - 1]
+                    : qualityNames[0];
+                message.textContent = `All fish caught in ${formattedQualities} quality!`;
+                message.style.textAlign = 'center';
+                message.style.padding = '20px';
+                message.style.fontFamily = "'Press Start 2P', cursive";
+                panel.appendChild(message);
+            }
+        }
+    });
+
+    // Restore fish states
+    loadFishState();
+}
+
+// Add event listeners for quality filters
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.quality-filter').forEach(filter => {
+        filter.addEventListener('click', () => {
+            filter.classList.toggle('active');
+            applyQualityFilters();
+        });
     });
 });
 
@@ -55,126 +227,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     let progressValues = null;
     let totalFishCount = 0;
     let fishCells = null;
-
-    // Optimized progress bar updates
-    function updateProgressBars() {
-        if (!progressBars) {
-            progressBars = document.querySelectorAll('.progress-bar');
-            progressValues = document.querySelectorAll('.progress-value');
-        }
-
-        // Count active circles for each rarity using a single DOM traversal
-        const activeCounts = new Array(RARITY_LEVELS.length).fill(0);
-        fishCells.forEach(cell => {
-            const circles = cell.querySelectorAll('.toggle-circle');
-            circles.forEach((circle, index) => {
-                if (circle.classList.contains('active')) {
-                    activeCounts[index]++;
-                }
-            });
-        });
-
-        // Update all progress bars at once
-        activeCounts.forEach((count, index) => {
-            const percentage = (count / totalFishCount * 100).toFixed(1);
-            progressBars[index].style.width = `${percentage}%`;
-            progressValues[index].textContent = `${percentage}%`;
-        });
-    }
-
-    function createProgressBars() {
-        const progressContainer = document.querySelector('.progress-bars');
-        progressContainer.innerHTML = ''; // Clear existing bars
-
-        RARITY_LEVELS.forEach((level, index) => {
-            const progressItem = document.createElement('div');
-            progressItem.className = 'progress-item';
-
-            const label = document.createElement('div');
-            label.className = 'progress-label';
-            label.textContent = level.name;
-
-            const barContainer = document.createElement('div');
-            barContainer.className = 'progress-bar-container';
-
-            const bar = document.createElement('div');
-            bar.className = 'progress-bar';
-            bar.style.backgroundColor = level.color;
-
-            const value = document.createElement('span');
-            value.className = 'progress-value';
-            value.textContent = '0%';
-
-            barContainer.appendChild(bar);
-            barContainer.appendChild(value);
-            progressItem.appendChild(label);
-            progressItem.appendChild(barContainer);
-            progressContainer.appendChild(progressItem);
-        });
-    }
-
-    function createHabitatProgress() {
-        const habitatContainer = document.querySelector('.habitat-progress');
-        habitatContainer.innerHTML = ''; // Clear existing items
-
-        // Get all unique habitats from the tab buttons
-        const habitats = Array.from(document.querySelectorAll('.tab-button'))
-            .map(button => button.textContent.trim());
-
-        habitats.forEach(habitat => {
-            const habitatItem = document.createElement('div');
-            habitatItem.className = 'habitat-item';
-
-            const name = document.createElement('div');
-            name.className = 'habitat-name';
-            name.textContent = habitat;
-
-            const barContainer = document.createElement('div');
-            barContainer.className = 'habitat-bar-container';
-
-            const bar = document.createElement('div');
-            bar.className = 'habitat-bar';
-
-            const percentage = document.createElement('div');
-            percentage.className = 'habitat-percentage';
-            percentage.textContent = '0%';
-
-            barContainer.appendChild(bar);
-            barContainer.appendChild(percentage);
-            habitatItem.appendChild(name);
-            habitatItem.appendChild(barContainer);
-            habitatContainer.appendChild(habitatItem);
-        });
-    }
-
-    function updateHabitatProgress() {
-        const habitatItems = document.querySelectorAll('.habitat-item');
-        
-        habitatItems.forEach(item => {
-            const habitatName = item.querySelector('.habitat-name').textContent;
-            const habitatPanel = document.querySelector(`.tab-panel[data-habitat="${habitatName}"]`);
-            
-            if (habitatPanel) {
-                const circles = habitatPanel.querySelectorAll('.toggle-circle');
-                let activeCount = 0;
-                const totalPossible = circles.length; // Total number of possible qualities (fish count * 6)
-
-                // Count all active circles
-                circles.forEach(circle => {
-                    if (circle.classList.contains('active')) {
-                        activeCount++;
-                    }
-                });
-
-                const percentage = totalPossible > 0 ? (activeCount / totalPossible * 100).toFixed(1) : '0.0';
-                const bar = item.querySelector('.habitat-bar');
-                const percentageText = item.querySelector('.habitat-percentage');
-                
-                bar.style.width = `${percentage}%`;
-                percentageText.textContent = `${percentage}%`;
-            }
-        });
-    }
 
     // Update both progress types when needed
     function updateAllProgress() {
@@ -232,271 +284,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         return container;
     }
 
-    // Function to create fish table
-    function createFishTable(fishes, habitat) {
-        const table = document.createElement('table');
-        table.className = 'fish-table';
-        
-        // Get number of columns based on screen width
-        const cellsPerRow = habitat === 'Misc' ? 2 : getColumnsForScreenWidth();
-        
-        let currentRow;
-        fishes.forEach((fish, index) => {
-            if (index % cellsPerRow === 0) {
-                currentRow = document.createElement('tr');
-                table.appendChild(currentRow);
-            }
-            
-            const cell = document.createElement('td');
-            cell.className = 'fish-cell';
-            cell.style.width = `${100 / cellsPerRow}%`;
-
-            // Add click handler for the cell
-            cell.addEventListener('click', (e) => {
-                // Only show details if not clicking on circles or checkbox
-                if (!e.target.classList.contains('toggle-circle') && 
-                    !e.target.classList.contains('fish-checkbox')) {
-                    showFishDetails(fish);
-                }
-            });
-
-            // Create fish info container
-            const fishInfo = document.createElement('div');
-            fishInfo.className = 'fish-info';
-
-            // Add fish name first
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'fish-name';
-            nameSpan.textContent = fish.name;
-            fishInfo.appendChild(nameSpan);
-
-            // Add fish image second
-            const img = document.createElement('img');
-            img.src = fish.icon || 'placeholder.png';
-            img.alt = fish.name;
-            img.className = 'fish-image';
-            fishInfo.appendChild(img);
-
-            cell.appendChild(fishInfo);
-
-            // Add toggle circles last
-            const circles = createToggleCircles();
-            cell.appendChild(circles);
-
-            currentRow.appendChild(cell);
-        });
-
-        // Fill remaining cells in the last row if needed
-        const remainingCells = cellsPerRow - (fishes.length % cellsPerRow);
-        if (remainingCells !== cellsPerRow) {
-            for (let i = 0; i < remainingCells; i++) {
-                const cell = document.createElement('td');
-                cell.style.width = `${100 / cellsPerRow}%`;
-                const fishInfo = document.createElement('div');
-                fishInfo.className = 'fish-info';
-                
-                const nameSpan = document.createElement('span');
-                nameSpan.className = 'fish-name';
-                fishInfo.appendChild(nameSpan);
-                
-                cell.appendChild(fishInfo);
-                
-                // Add toggle circles to empty cells too
-                const circles = createToggleCircles();
-                cell.appendChild(circles);
-                
-                currentRow.appendChild(cell);
-            }
-        }
-
-        return table;
-    }
-
-    // Create a modified version of createFishTable that optionally skips empty cells
-    function createFilteredFishTable(fishes, habitat, skipEmptyCells = false) {
-        const table = document.createElement('table');
-        table.className = 'fish-table';
-        
-        // Get number of columns based on screen width
-        const cellsPerRow = habitat === 'Misc' ? 2 : getColumnsForScreenWidth();
-        
-        let currentRow;
-        fishes.forEach((fish, index) => {
-            if (index % cellsPerRow === 0) {
-                currentRow = document.createElement('tr');
-                table.appendChild(currentRow);
-            }
-            
-            const cell = document.createElement('td');
-            cell.className = 'fish-cell';
-            cell.style.width = `${100 / cellsPerRow}%`;
-
-            // Add click handler for the cell
-            cell.addEventListener('click', (e) => {
-                // Only show details if not clicking on circles or checkbox
-                if (!e.target.classList.contains('toggle-circle') && 
-                    !e.target.classList.contains('fish-checkbox')) {
-                    showFishDetails(fish);
-                }
-            });
-
-            // Create fish info container
-            const fishInfo = document.createElement('div');
-            fishInfo.className = 'fish-info';
-
-            // Add fish name first
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'fish-name';
-            nameSpan.textContent = fish.name;
-            fishInfo.appendChild(nameSpan);
-
-            // Add fish image second
-            const img = document.createElement('img');
-            img.src = fish.icon || 'placeholder.png';
-            img.alt = fish.name;
-            img.className = 'fish-image';
-            fishInfo.appendChild(img);
-
-            cell.appendChild(fishInfo);
-
-            // Add toggle circles last
-            const circles = createToggleCircles();
-            cell.appendChild(circles);
-
-            currentRow.appendChild(cell);
-        });
-
-        // Only add empty cells if not skipping them
-        if (!skipEmptyCells) {
-            const remainingCells = cellsPerRow - (fishes.length % cellsPerRow);
-            if (remainingCells !== cellsPerRow) {
-                for (let i = 0; i <remainingCells; i++) {
-                    const cell = document.createElement('td');
-                    cell.style.width = `${100 / cellsPerRow}%`;
-                    const fishInfo = document.createElement('div');
-                    fishInfo.className = 'fish-info';
-                    
-                    const nameSpan = document.createElement('span');
-                    nameSpan.className = 'fish-name';
-                    fishInfo.appendChild(nameSpan);
-                    
-                    cell.appendChild(fishInfo);
-                    
-                    // Add toggle circles to empty cells too
-                    const circles = createToggleCircles();
-                    cell.appendChild(circles);
-                    
-                    currentRow.appendChild(cell);
-                }
-            }
-        }
-        
-        return table;
-    }
-
-    // Function to get number of columns based on screen width
-    function getColumnsForScreenWidth() {
-        const width = window.innerWidth;
-        if (width <= 480) return 1;
-        if (width <= 768) return 2;
-        if (width <= 1024) return 3;
-        return 4;
-    }
-
-    // Function to show fish details
-    function showFishDetails(fish) {
-        const popup = document.getElementById('fishDetailsPopup');
-        const title = popup.querySelector('.fish-details-title');
-        const content = popup.querySelector('.fish-details-content');
-        
-        title.textContent = fish.name;
-        
-        // Create content with image and details
-        content.innerHTML = '';
-        
-        // Create main container for vertical layout
-        const container = document.createElement('div');
-        container.className = 'fish-details-container';
-        
-        // Add fish image
-        if (fish.icon) {
-            const img = document.createElement('img');
-            img.src = fish.icon;
-            img.alt = fish.name;
-            img.className = 'fish-details-image';
-            container.appendChild(img);
-        }
-        
-        // Add fish info
-        const info = document.createElement('div');
-        info.className = 'fish-details-info';
-        
-        if (fish.Info) {
-            // Add scientific name if available
-            if (fish.Info['Scientific Name']) {
-                const scientific = document.createElement('div');
-                scientific.className = 'detail-item';
-                scientific.innerHTML = `
-                    <div class="detail-label">Scientific Name:</div>
-                    <div class="detail-value"><em>${fish.Info['Scientific Name']}</em></div>
-                `;
-                info.appendChild(scientific);
-            }
-            
-            // Add flavor text if available
-            if (fish.Info['Flavor Text']) {
-                const flavor = document.createElement('div');
-                flavor.className = 'detail-item';
-                flavor.innerHTML = `
-                    <div class="detail-label">Description:</div>
-                    <div class="detail-value">${fish.Info['Flavor Text']}</div>
-                `;
-                info.appendChild(flavor);
-            }
-            
-            // Add tier if available
-            if (fish.Info['Tier']) {
-                const tier = document.createElement('div');
-                tier.className = 'detail-item';
-                tier.innerHTML = `
-                    <div class="detail-label">Tier:</div>
-                    <div class="detail-value">${fish.Info['Tier']}</div>
-                `;
-                info.appendChild(tier);
-            }
-        }
-        
-        // Add best lure if catch chances are available
-        if (fish['Catch Chances']) {
-            // Find the lure with highest percentage
-            let bestLure = Object.entries(fish['Catch Chances']).reduce((best, current) => {
-                const currentPercentage = parseFloat(current[1].replace('%', ''));
-                const bestPercentage = parseFloat(best[1].replace('%', ''));
-                return currentPercentage > bestPercentage ? current : best;
-            });
-
-            const chances = document.createElement('div');
-            chances.className = 'detail-item';
-            chances.innerHTML = `
-                <div class="detail-label">Best Lure:</div>
-                <div class="detail-value">${bestLure[0]} (${bestLure[1]})</div>
-            `;
-            info.appendChild(chances);
-        }
-        
-        // Add wiki link if page_url is available
-        if (fish.page_url) {
-            const wikiLink = document.createElement('div');
-            wikiLink.className = 'wiki-link';
-            wikiLink.innerHTML = `<a href="${fish.page_url}" target="_blank">View on Wiki</a>`;
-            info.appendChild(wikiLink);
-        }
-        
-        container.appendChild(info);
-        content.appendChild(container);
-        popup.style.display = 'flex';
-    }
-
     // Add event listener for the close button
     document.getElementById('fishDetailsClose').addEventListener('click', () => {
         document.getElementById('fishDetailsPopup').style.display = 'none';
@@ -508,19 +295,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             e.target.style.display = 'none';
         }
     });
-
-    try {
-        const fishData = await loadFishData();
-        // Cache fish cells after creating the table
-        fishCells = document.querySelectorAll('.fish-table td');
-        totalFishCount = document.querySelectorAll('.fish-table td span').length;
-        
-        // Load saved states after all elements are created
-        loadFishState();
-    } catch (error) {
-        console.error('Error loading data:', error);
-        document.getElementById('app').innerHTML = '<p>Error loading data. Please make sure fish.json is in the same directory.</p>';
-    }
 
     // Add window resize handler to update tables when screen size changes
     let resizeTimeout;
@@ -544,117 +318,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
-// Store fish data for filtering
-let fishData = null;
-
-// Get DOM elements
-const quickOptionsToggle = document.querySelector('.quick-options-toggle');
-const quickOptionsPanel = document.querySelector('.quick-options-panel');
-const quickActions = document.querySelectorAll('.quick-action');
-const filtersToggle = document.querySelector('.filters-toggle');
-const filtersPanel = document.querySelector('.filters-panel');
-const filterButton = document.querySelector('.filter-button');
-
-// Function to apply fish filter
-function applyFilter() {
-    if (!fishData) return;
-    
-    const hideAllQualities = filterButton.classList.contains('active');
-    const tabPanels = document.querySelectorAll('.tab-panel');
-
-    // Get saved states from cookie
-    const savedStates = JSON.parse(getCookie('fishRarityStates') || '{}');
-
-    tabPanels.forEach(panel => {
-        const habitat = panel.getAttribute('data-habitat');
-        const habitatData = Object.values(fishData.habitats).find(h => h.name === habitat);
-        
-        if (!habitatData) return;
-
-        if (hideAllQualities) {
-            const fishCells = panel.querySelectorAll('.fish-cell');
-            // Get all fish that are not fully caught
-            const visibleFish = Array.from(fishCells).filter(cell => {
-                const fishName = cell.querySelector('.fish-name')?.textContent;
-                if (!fishName || !savedStates[fishName]) return true;
-                return !savedStates[fishName].every(state => state === true);
-            }).map(cell => {
-                return {
-                    name: cell.querySelector('.fish-name').textContent,
-                    icon: cell.querySelector('.fish-image').src
-                };
-            });
-
-            // Clear and recreate the table with filtered fish
-            panel.innerHTML = '';
-            const table = createFilteredFishTable(visibleFish, habitat, true); // Skip empty cells for filtered view
-            panel.appendChild(table);
-        } else {
-            // Show all fish when filter is off
-            panel.innerHTML = '';
-            const table = createFilteredFishTable(habitatData.fish, habitat, false); // Keep empty cells for full view
-            panel.appendChild(table);
-        }
-    });
-
-    // Restore fish states from cookie after recreating tables
-    document.querySelectorAll('.fish-cell').forEach(cell => {
-        const fishName = cell.querySelector('.fish-name')?.textContent;
-        if (fishName && savedStates[fishName]) {
-            const circles = cell.querySelectorAll('.toggle-circle');
-            savedStates[fishName].forEach((isActive, index) => {
-                if (isActive) circles[index].classList.add('active');
-            });
-        }
-    });
-}
-
-// Function to apply quality filters
-function applyQualityFilters() {
-    if (!fishData) return;
-
-    const activeFilters = Array.from(document.querySelectorAll('.quality-filter.active'))
-        .map(filter => parseInt(filter.dataset.quality));
-    
-    const savedStates = JSON.parse(getCookie('fishRarityStates') || '{}');
-    const tabPanels = document.querySelectorAll('.tab-panel');
-
-    tabPanels.forEach(panel => {
-        const habitat = panel.getAttribute('data-habitat');
-        const habitatData = Object.values(fishData.habitats).find(h => h.name === habitat);
-        
-        if (!habitatData) return;
-
-        // If no filters are active, show all fish
-        if (activeFilters.length === 0) {
-            panel.innerHTML = '';
-            const table = createFilteredFishTable(habitatData.fish, habitat, false);
-            panel.appendChild(table);
-            return;
-        }
-
-        // Get all fish that don't have the filtered qualities marked
-        const visibleFish = habitatData.fish.filter(fish => {
-            if (!savedStates[fish.name]) return true;
-            return !activeFilters.some(quality => savedStates[fish.name][quality] === true);
-        });
-
-        // Recreate table with only visible fish
-        panel.innerHTML = '';
-        const table = createFilteredFishTable(visibleFish, habitat, true);
-        panel.appendChild(table);
-    });
-
-    // Restore fish states
-    loadFishState();
-}
-
 // Add event listeners for quick actions
 document.querySelectorAll('.quick-action.quality-action').forEach(action => {
     action.addEventListener('click', () => {
         const quality = parseInt(action.dataset.quality);
-        selectQualityLevel(quality);
-        saveFishState();
+        const shouldActivate = action.dataset.action === 'activate';
+        
+        document.querySelectorAll('.fish-cell').forEach(cell => {
+            const circles = cell.querySelectorAll('.toggle-circle');
+            // If the circle exists and its current state is not what we want
+            if (circles[quality]) {
+                const isActive = circles[quality].classList.contains('active');
+                // Only click if we need to change the state
+                if (isActive !== shouldActivate) {
+                    circles[quality].click();
+                }
+            }
+        });
+        
         updateAllProgress();
     });
 });
@@ -662,74 +343,30 @@ document.querySelectorAll('.quick-action.quality-action').forEach(action => {
 // Add event listener for deselect-all
 document.querySelector('.quick-action[data-action="deselect-all"]').addEventListener('click', () => {
     const confirmPopup = document.getElementById('confirmPopup');
-    confirmPopup.style.display = 'flex';
+    const confirmYes = document.getElementById('confirmYes');
+    const confirmNo = document.getElementById('confirmNo');
+    const confirmMessage = document.getElementById('confirmMessage');
 
-    // Handle Yes button
-    document.getElementById('confirmYes').addEventListener('click', () => {
-        deselectAllFish();
-        saveFishState();
-        updateAllProgress();
-        confirmPopup.style.display = 'none';
-    });
+    if (confirmPopup && confirmYes && confirmNo && confirmMessage) {
+        confirmMessage.textContent = 'Are you sure you want to mark all fish as uncaught? This cannot be undone.';
+        confirmPopup.style.display = 'flex';
 
-    // Handle No button
-    document.getElementById('confirmNo').addEventListener('click', () => {
-        confirmPopup.style.display = 'none';
-    });
-
-    // Close when clicking outside
-    confirmPopup.addEventListener('click', (e) => {
-        if (e.target === confirmPopup) {
+        const handleYes = () => {
+            document.querySelectorAll('.toggle-circle.active').forEach(circle => {
+                circle.click();
+            });
             confirmPopup.style.display = 'none';
-        }
-    });
+            confirmYes.removeEventListener('click', handleYes);
+            confirmNo.removeEventListener('click', handleNo);
+        };
+
+        const handleNo = () => {
+            confirmPopup.style.display = 'none';
+            confirmYes.removeEventListener('click', handleYes);
+            confirmNo.removeEventListener('click', handleNo);
+        };
+
+        confirmYes.addEventListener('click', handleYes);
+        confirmNo.addEventListener('click', handleNo);
+    }
 });
-
-// Add event listeners for quality filters
-document.querySelectorAll('.quality-filter').forEach(filter => {
-    filter.addEventListener('click', () => {
-        filter.classList.toggle('active');
-        applyQualityFilters();
-    });
-});
-
-// Initialize everything when the page loads
-async function initializeApp() {
-    // Load fish data
-    fishData = await loadFishData();
-    if (!fishData) return;
-
-    // Create habitat tabs
-    createTabs(fishData);
-
-    // Create progress bars
-    createProgressBars();
-    createHabitatProgress();
-
-    // Add event listeners for quick options
-    quickOptionsToggle.addEventListener('click', () => {
-        quickOptionsPanel.classList.toggle('show');
-        updateToggleText();
-        saveCollapsibleStates();
-    });
-
-    // Add event listeners for filters
-    filtersToggle.addEventListener('click', () => {
-        filtersPanel.classList.toggle('show');
-        updateFiltersToggleText();
-        saveCollapsibleStates();
-    });
-
-    // Add event listener for filter button
-    filterButton.addEventListener('click', () => {
-        filterButton.classList.toggle('active');
-        applyFilter();
-    });
-
-    // Load saved states
-    loadFishState();
-    loadCollapsibleStates();
-}
-
-// Start the application
-window.addEventListener('load', initializeApp);

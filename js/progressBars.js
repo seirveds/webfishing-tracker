@@ -24,17 +24,25 @@ export function updateProgressBars() {
     const container = document.querySelector('.progress-bars');
     if (!container) return;
 
+    // Create progress bars if they don't exist
+    if (!container.querySelector('.progress-item')) {
+        createProgressBars();
+    }
+
     const progressItems = container.querySelectorAll('.progress-item');
     if (!progressItems.length) return;
+
+    // Count active circles for each rarity using a single DOM traversal
+    const fishCells = document.querySelectorAll('.fish-cell');
+    const totalFish = fishCells.length;
 
     RARITY_LEVELS.forEach((rarity, index) => {
         const progressItem = progressItems[index];
         if (!progressItem) return;
 
-        const totalFish = document.querySelectorAll('.fish-cell').length;
         const caughtFish = document.querySelectorAll(`.toggle-circle[data-rarity="${index}"].active`).length;
-        
         const percentage = totalFish > 0 ? (caughtFish / totalFish * 100).toFixed(1) : '0.0';
+        
         const bar = progressItem.querySelector('.progress-bar');
         const percentageText = progressItem.querySelector('.progress-percentage');
         

@@ -20,7 +20,11 @@ export function getCookie(name) {
 }
 
 export function saveFishState() {
-    const fishStates = {};
+    // Get existing states first
+    const existingStates = getCookie('fishRarityStates');
+    let fishStates = existingStates ? JSON.parse(existingStates) : {};
+
+    // Update states only for visible fish
     document.querySelectorAll('.fish-cell').forEach(cell => {
         const fishName = cell.querySelector('.fish-name')?.textContent;
         if (fishName) {
@@ -28,25 +32,33 @@ export function saveFishState() {
             fishStates[fishName] = circles.map(circle => circle.classList.contains('active'));
         }
     });
+
     setCookie('fishRarityStates', JSON.stringify(fishStates));
 }
 
 export function loadFishState() {
     const savedStates = getCookie('fishRarityStates');
-    if (savedStates) {
-        const fishStates = JSON.parse(savedStates);
-        document.querySelectorAll('.fish-cell').forEach(cell => {
-            const fishName = cell.querySelector('.fish-name')?.textContent;
-            if (fishName && fishStates[fishName]) {
-                const circles = cell.querySelectorAll('.toggle-circle');
-                fishStates[fishName].forEach((isActive, index) => {
-                    if (isActive) circles[index].classList.add('active');
-                });
-            }
-        });
-        if (document.querySelector('#completion-tab').classList.contains('active')) {
-            updateAllProgress();
+    if (!savedStates) return;
+
+    const fishStates = JSON.parse(savedStates);
+    const cells = document.querySelectorAll('.fish-cell');
+    if (!cells.length) return;  // No fish cells yet, return early
+
+    cells.forEach(cell => {
+        const fishName = cell.querySelector('.fish-name')?.textContent;
+        if (fishName && fishStates[fishName]) {
+            const circles = cell.querySelectorAll('.toggle-circle');
+            fishStates[fishName].forEach((isActive, index) => {
+                if (circles[index] && isActive) {
+                    circles[index].classList.add('active');
+                }
+            });
         }
+    });
+
+    const completionTab = document.querySelector('#completion-tab');
+    if (completionTab?.classList.contains('active')) {
+        updateAllProgress();
     }
 }
 

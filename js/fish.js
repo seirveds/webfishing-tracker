@@ -3,13 +3,16 @@ import { updateAllProgress } from './progressBars.js';
 import { saveFishState } from './state.js';
 
 // Function to create toggle circles with optimized event handling
-export function createToggleCircles() {
+export function createToggleCircles(activeStates = []) {
     const container = document.createElement('div');
     container.className = 'circle-container';
     
     RARITY_LEVELS.forEach((rarity, i) => {
         const circle = document.createElement('div');
         circle.className = 'toggle-circle';
+        if (activeStates[i]) {
+            circle.classList.add('active');
+        }
         circle.title = rarity.name;
         circle.setAttribute('data-rarity', i);
         circle.style.setProperty('--circle-color', rarity.color);
@@ -41,7 +44,7 @@ export function getColumnsForScreenWidth() {
 }
 
 // Function to create fish table
-export function createFishTable(fishes, habitat) {
+export function createFishTable(fishes, habitat, skipEmptyCells = false) {
     const table = document.createElement('table');
     table.className = 'fish-table';
     
@@ -95,25 +98,27 @@ export function createFishTable(fishes, habitat) {
     });
 
     // Fill remaining cells in the last row if needed
-    const remainingCells = cellsPerRow - (fishes.length % cellsPerRow);
-    if (remainingCells !== cellsPerRow) {
-        for (let i = 0; i < remainingCells; i++) {
-            const cell = document.createElement('td');
-            cell.style.width = `${100 / cellsPerRow}%`;
-            const fishInfo = document.createElement('div');
-            fishInfo.className = 'fish-info';
-            
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'fish-name';
-            fishInfo.appendChild(nameSpan);
-            
-            cell.appendChild(fishInfo);
-            
-            // Add toggle circles to empty cells too
-            const circles = createToggleCircles();
-            cell.appendChild(circles);
-            
-            currentRow.appendChild(cell);
+    if (!skipEmptyCells) {
+        const remainingCells = cellsPerRow - (fishes.length % cellsPerRow);
+        if (remainingCells !== cellsPerRow) {
+            for (let i = 0; i < remainingCells; i++) {
+                const cell = document.createElement('td');
+                cell.style.width = `${100 / cellsPerRow}%`;
+                const fishInfo = document.createElement('div');
+                fishInfo.className = 'fish-info';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'fish-name';
+                fishInfo.appendChild(nameSpan);
+                
+                cell.appendChild(fishInfo);
+                
+                // Add toggle circles to empty cells too
+                const circles = createToggleCircles();
+                cell.appendChild(circles);
+                
+                currentRow.appendChild(cell);
+            }
         }
     }
 
@@ -138,6 +143,7 @@ export function createFilteredFishTable(fishes, habitat, skipEmptyCells = false)
         const cell = document.createElement('td');
         cell.className = 'fish-cell';
         cell.style.width = `${100 / cellsPerRow}%`;
+        cell.dataset.fish = fish.name;
 
         // Add click handler for the cell
         cell.addEventListener('click', (e) => {
@@ -167,8 +173,17 @@ export function createFilteredFishTable(fishes, habitat, skipEmptyCells = false)
 
         cell.appendChild(fishInfo);
 
-        // Add toggle circles last
-        const circles = createToggleCircles();
+        // Get existing circle states if they exist
+        const existingCell = document.querySelector(`.fish-cell[data-fish="${fish.name}"]`);
+        const activeStates = [];
+        if (existingCell) {
+            existingCell.querySelectorAll('.toggle-circle').forEach(circle => {
+                activeStates.push(circle.classList.contains('active'));
+            });
+        }
+
+        // Add toggle circles with preserved states
+        const circles = createToggleCircles(activeStates);
         cell.appendChild(circles);
 
         currentRow.appendChild(cell);
