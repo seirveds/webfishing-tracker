@@ -20,7 +20,11 @@ export function getCookie(name) {
 }
 
 export function saveFishState() {
-    const fishStates = {};
+    // Get existing states first
+    const existingStates = getCookie('fishRarityStates');
+    let fishStates = existingStates ? JSON.parse(existingStates) : {};
+
+    // Update states only for visible fish
     document.querySelectorAll('.fish-cell').forEach(cell => {
         const fishName = cell.querySelector('.fish-name')?.textContent;
         if (fishName) {
@@ -28,24 +32,88 @@ export function saveFishState() {
             fishStates[fishName] = circles.map(circle => circle.classList.contains('active'));
         }
     });
+
     setCookie('fishRarityStates', JSON.stringify(fishStates));
 }
 
 export function loadFishState() {
     const savedStates = getCookie('fishRarityStates');
-    if (savedStates) {
-        const fishStates = JSON.parse(savedStates);
-        document.querySelectorAll('.fish-cell').forEach(cell => {
-            const fishName = cell.querySelector('.fish-name')?.textContent;
-            if (fishName && fishStates[fishName]) {
-                const circles = cell.querySelectorAll('.toggle-circle');
-                fishStates[fishName].forEach((isActive, index) => {
-                    if (isActive) circles[index].classList.add('active');
-                });
-            }
-        });
-        if (document.querySelector('#completion-tab').classList.contains('active')) {
-            updateAllProgress();
+    if (!savedStates) return;
+
+    const fishStates = JSON.parse(savedStates);
+    const cells = document.querySelectorAll('.fish-cell');
+    if (!cells.length) return;  // No fish cells yet, return early
+
+    cells.forEach(cell => {
+        const fishName = cell.querySelector('.fish-name')?.textContent;
+        if (fishName && fishStates[fishName]) {
+            const circles = cell.querySelectorAll('.toggle-circle');
+            fishStates[fishName].forEach((isActive, index) => {
+                if (circles[index] && isActive) {
+                    circles[index].classList.add('active');
+                }
+            });
         }
+    });
+
+    const completionTab = document.querySelector('#completion-tab');
+    if (completionTab?.classList.contains('active')) {
+        updateAllProgress();
+    }
+}
+
+// Collapsible state management
+export function saveCollapsibleStates() {
+    const quickOptionsPanel = document.querySelector('.quick-options-panel');
+    const filtersPanel = document.querySelector('.filters-panel');
+    
+    const states = {
+        quickOptions: quickOptionsPanel?.classList.contains('show') || false,
+        filters: filtersPanel?.classList.contains('show') || false
+    };
+    setCookie('collapsibleStates', JSON.stringify(states));
+}
+
+export function loadCollapsibleStates() {
+    const savedStates = getCookie('collapsibleStates');
+    if (savedStates) {
+        const states = JSON.parse(savedStates);
+        const quickOptionsPanel = document.querySelector('.quick-options-panel');
+        const quickOptionsToggle = document.querySelector('.quick-options-toggle');
+        const filtersPanel = document.querySelector('.filters-panel');
+        const filtersToggle = document.querySelector('.filters-toggle');
+        
+        // Quick Options
+        if (quickOptionsPanel && quickOptionsToggle) {
+            quickOptionsPanel.classList.toggle('show', states.quickOptions);
+            quickOptionsToggle.textContent = states.quickOptions ? 'Quick Options ▲' : 'Quick Options ▼';
+        }
+        
+        // Filters
+        if (filtersPanel && filtersToggle) {
+            filtersPanel.classList.toggle('show', states.filters);
+            filtersToggle.textContent = states.filters ? 'Filters ▲' : 'Filters ▼';
+        }
+    }
+}
+
+// Helper functions for updating toggle text
+export function updateToggleText() {
+    const quickOptionsPanel = document.querySelector('.quick-options-panel');
+    const quickOptionsToggle = document.querySelector('.quick-options-toggle');
+    if (quickOptionsPanel && quickOptionsToggle) {
+        quickOptionsToggle.textContent = quickOptionsPanel.classList.contains('show') 
+            ? 'Quick Options ▲' 
+            : 'Quick Options ▼';
+    }
+}
+
+export function updateFiltersToggleText() {
+    const filtersPanel = document.querySelector('.filters-panel');
+    const filtersToggle = document.querySelector('.filters-toggle');
+    if (filtersPanel && filtersToggle) {
+        filtersToggle.textContent = filtersPanel.classList.contains('show') 
+            ? 'Filters ▲' 
+            : 'Filters ▼';
     }
 }

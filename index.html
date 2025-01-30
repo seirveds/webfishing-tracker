@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -27,29 +28,54 @@
                     <div class="container">
                         <div class="tabs">
                             <div class="tab-buttons"></div>
-                            <div class="tab-content"></div>
-                        </div>
-                        <div class="quick-options-wrapper">
-                            <button class="quick-options-toggle">
-                                Quick Options ▼
-                            </button>
-                            <div class="quick-options-panel">
-                                <div class="quick-options-content">
-                                    <h3 class="quick-options-header">Mark all as caught:</h3>
-                                    <div class="quick-options-group">
-                                        <button class="quick-action quality-action" data-quality="0">Normal</button>
-                                        <button class="quick-action quality-action" data-quality="1">Shining</button>
-                                        <button class="quick-action quality-action" data-quality="2">Glistening</button>
-                                        <button class="quick-action quality-action" data-quality="3">Opulent</button>
-                                        <button class="quick-action quality-action" data-quality="4">Radiant</button>
-                                        <button class="quick-action quality-action" data-quality="5">Alpha</button>
-                                    </div>
-                                    <div class="quick-options-separator"></div>
-                                    <div class="quick-options-group">
-                                        <button class="quick-action danger-action" data-action="deselect-all">Clear All</button>
+                            <div class="quick-options-wrapper">
+                                <button class="quick-options-toggle">
+                                    Quick Options ▼
+                                </button>
+                                <div class="quick-options-panel">
+                                    <div class="quick-options-content">
+                                        <h3 class="quick-options-header">Mark all as caught:</h3>
+                                        <div class="quick-options-group">
+                                            <button class="quick-action quality-action" data-quality="0" data-action="activate">Normal</button>
+                                            <button class="quick-action quality-action" data-quality="1" data-action="activate">Shining</button>
+                                            <button class="quick-action quality-action" data-quality="2" data-action="activate">Glistening</button>
+                                            <button class="quick-action quality-action" data-quality="3" data-action="activate">Opulent</button>
+                                            <button class="quick-action quality-action" data-quality="4" data-action="activate">Radiant</button>
+                                            <button class="quick-action quality-action" data-quality="5" data-action="activate">Alpha</button>
+                                        </div>
+                                        <div class="quick-options-separator"></div>
+                                        <div class="quick-options-group">
+                                            <button class="quick-action danger-action" data-action="deselect-all">Clear All</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            <div class="filters-wrapper">
+                                <button class="filters-toggle">
+                                    Filters ▼
+                                </button>
+                                <div class="filters-panel">
+                                    <div class="filters-content">
+                                        <h3 class="filters-header">Hide caught by quality:</h3>
+                                        <div style="display: none;">
+                                            <div class="filters-group">
+                                                <button class="filter-button" data-filter="all-qualities">All qualities</button>
+                                            </div>
+                                            <div class="filters-separator"></div>
+                                            <h3 class="filters-header">Filter by quality:</h3>
+                                        </div>
+                                        <div class="filters-group">
+                                            <button class="quick-action quality-filter" data-quality="0">Normal</button>
+                                            <button class="quick-action quality-filter" data-quality="1">Shining</button>
+                                            <button class="quick-action quality-filter" data-quality="2">Glistening</button>
+                                            <button class="quick-action quality-filter" data-quality="3">Opulent</button>
+                                            <button class="quick-action quality-filter" data-quality="4">Radiant</button>
+                                            <button class="quick-action quality-filter" data-quality="5">Alpha</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-content"></div>
                         </div>
                     </div>
                 </div>

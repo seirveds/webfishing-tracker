@@ -1,4 +1,5 @@
 import { RARITY_LEVELS } from './config.js';
+import { loadCollapsibleStates } from './state.js';
 
 // Habitat progress related functionality
 export function createHabitatProgress() {
@@ -20,6 +21,23 @@ export function createHabitatProgress() {
                 <div class="habitat-value">0.0%</div>
             </div>
         `;
+
+        // Add click handler to switch to habitat and restore collapsible states
+        progressItem.addEventListener('click', () => {
+            // Find and click the corresponding tab button
+            const tabButton = document.querySelector(`.tab-button[data-habitat="${habitatName}"]`);
+            if (tabButton) {
+                tabButton.click();
+            }
+            // Switch to collection tab if we're not already there
+            const collectionButton = document.querySelector('.main-tab-button[data-tab="collection"]');
+            if (collectionButton && !collectionButton.classList.contains('active')) {
+                collectionButton.click();
+            }
+            // Restore collapsible states
+            loadCollapsibleStates();
+        });
+
         container.appendChild(progressItem);
     });
 }

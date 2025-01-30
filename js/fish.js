@@ -3,27 +3,45 @@ import { updateAllProgress } from './progressBars.js';
 import { saveFishState } from './state.js';
 
 // Function to create toggle circles with optimized event handling
-export function createToggleCircles() {
+export function createToggleCircles(activeStates = []) {
     const container = document.createElement('div');
     container.className = 'circle-container';
     
     RARITY_LEVELS.forEach((rarity, i) => {
         const circle = document.createElement('div');
         circle.className = 'toggle-circle';
+        if (activeStates[i]) {
+            circle.classList.add('active');
+        }
         circle.title = rarity.name;
         circle.setAttribute('data-rarity', i);
         circle.style.setProperty('--circle-color', rarity.color);
         circle.addEventListener('click', (e) => {
             e.stopPropagation();
             circle.classList.toggle('active');
-            // Delay updates to next frame for better performance
-            requestAnimationFrame(() => {
-                if (document.querySelector('#completion-tab').classList.contains('active')) {
-                    updateAllProgress();
+            
+            // Get the fish name from the parent cell
+            const cell = circle.closest('.fish-cell');
+            const fishName = cell.querySelector('.fish-name').textContent;
+            
+            // Update the fish state
+            saveFishState(fishName, parseInt(circle.dataset.rarity), circle.classList.contains('active'));
+            
+            // Update progress bars
+            updateAllProgress();
+
+            // If quality filters are active and we just marked a fish as caught in a filtered quality,
+            // reapply the filters to update the table
+            const activeFilters = Array.from(document.querySelectorAll('.quality-filter.active'))
+                .map(filter => parseInt(filter.dataset.quality));
+            
+            if (activeFilters.length > 0 && activeFilters.includes(i) && circle.classList.contains('active')) {
+                // Find and call the applyQualityFilters function from app.js
+                const applyQualityFilters = window.applyQualityFilters;
+                if (typeof applyQualityFilters === 'function') {
+                    applyQualityFilters();
                 }
-                saveFishState();
-                updateRemainingFish();
-            });
+            }
         });
         container.appendChild(circle);
     });
@@ -41,7 +59,7 @@ export function getColumnsForScreenWidth() {
 }
 
 // Function to create fish table
-export function createFishTable(fishes, habitat) {
+export function createFishTable(fishes, habitat, skipEmptyCells = false) {
     const table = document.createElement('table');
     table.className = 'fish-table';
     
@@ -95,28 +113,122 @@ export function createFishTable(fishes, habitat) {
     });
 
     // Fill remaining cells in the last row if needed
-    const remainingCells = cellsPerRow - (fishes.length % cellsPerRow);
-    if (remainingCells !== cellsPerRow) {
-        for (let i = 0; i < remainingCells; i++) {
-            const cell = document.createElement('td');
-            cell.style.width = `${100 / cellsPerRow}%`;
-            const fishInfo = document.createElement('div');
-            fishInfo.className = 'fish-info';
-            
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'fish-name';
-            fishInfo.appendChild(nameSpan);
-            
-            cell.appendChild(fishInfo);
-            
-            // Add toggle circles to empty cells too
-            const circles = createToggleCircles();
-            cell.appendChild(circles);
-            
-            currentRow.appendChild(cell);
+    if (!skipEmptyCells) {
+        const remainingCells = cellsPerRow - (fishes.length % cellsPerRow);
+        if (remainingCells !== cellsPerRow) {
+            for (let i = 0; i < remainingCells; i++) {
+                const cell = document.createElement('td');
+                cell.style.width = `${100 / cellsPerRow}%`;
+                const fishInfo = document.createElement('div');
+                fishInfo.className = 'fish-info';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'fish-name';
+                fishInfo.appendChild(nameSpan);
+                
+                cell.appendChild(fishInfo);
+                
+                // Add toggle circles to empty cells too
+                const circles = createToggleCircles();
+                cell.appendChild(circles);
+                
+                currentRow.appendChild(cell);
+            }
         }
     }
 
+    return table;
+}
+
+// Function to create filtered fish table
+export function createFilteredFishTable(fishes, habitat, skipEmptyCells = false) {
+    const table = document.createElement('table');
+    table.className = 'fish-table';
+    
+    // Get number of columns based on screen width
+    const cellsPerRow = habitat === 'Misc' ? 2 : getColumnsForScreenWidth();
+    
+    let currentRow;
+    fishes.forEach((fish, index) => {
+        if (index % cellsPerRow === 0) {
+            currentRow = document.createElement('tr');
+            table.appendChild(currentRow);
+        }
+        
+        const cell = document.createElement('td');
+        cell.className = 'fish-cell';
+        cell.style.width = `${100 / cellsPerRow}%`;
+        cell.dataset.fish = fish.name;
+
+        // Add click handler for the cell
+        cell.addEventListener('click', (e) => {
+            // Only show details if not clicking on circles or checkbox
+            if (!e.target.classList.contains('toggle-circle') && 
+                !e.target.classList.contains('fish-checkbox')) {
+                showFishDetails(fish);
+            }
+        });
+
+        // Create fish info container
+        const fishInfo = document.createElement('div');
+        fishInfo.className = 'fish-info';
+
+        // Add fish name first
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'fish-name';
+        nameSpan.textContent = fish.name;
+        fishInfo.appendChild(nameSpan);
+
+        // Add fish image second
+        const img = document.createElement('img');
+        img.src = fish.icon || 'placeholder.png';
+        img.alt = fish.name;
+        img.className = 'fish-image';
+        fishInfo.appendChild(img);
+
+        cell.appendChild(fishInfo);
+
+        // Get existing circle states if they exist
+        const existingCell = document.querySelector(`.fish-cell[data-fish="${fish.name}"]`);
+        const activeStates = [];
+        if (existingCell) {
+            existingCell.querySelectorAll('.toggle-circle').forEach(circle => {
+                activeStates.push(circle.classList.contains('active'));
+            });
+        }
+
+        // Add toggle circles with preserved states
+        const circles = createToggleCircles(activeStates);
+        cell.appendChild(circles);
+
+        currentRow.appendChild(cell);
+    });
+
+    // Only add empty cells if not skipping them
+    if (!skipEmptyCells) {
+        const remainingCells = cellsPerRow - (fishes.length % cellsPerRow);
+        if (remainingCells !== cellsPerRow) {
+            for (let i = 0; i < remainingCells; i++) {
+                const cell = document.createElement('td');
+                cell.style.width = `${100 / cellsPerRow}%`;
+                const fishInfo = document.createElement('div');
+                fishInfo.className = 'fish-info';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'fish-name';
+                fishInfo.appendChild(nameSpan);
+                
+                cell.appendChild(fishInfo);
+                
+                // Add toggle circles to empty cells too
+                const circles = createToggleCircles();
+                cell.appendChild(circles);
+                
+                currentRow.appendChild(cell);
+            }
+        }
+    }
+    
     return table;
 }
 
