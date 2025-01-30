@@ -19,14 +19,29 @@ export function createToggleCircles(activeStates = []) {
         circle.addEventListener('click', (e) => {
             e.stopPropagation();
             circle.classList.toggle('active');
-            // Delay updates to next frame for better performance
-            requestAnimationFrame(() => {
-                if (document.querySelector('#completion-tab').classList.contains('active')) {
-                    updateAllProgress();
+            
+            // Get the fish name from the parent cell
+            const cell = circle.closest('.fish-cell');
+            const fishName = cell.querySelector('.fish-name').textContent;
+            
+            // Update the fish state
+            saveFishState(fishName, parseInt(circle.dataset.rarity), circle.classList.contains('active'));
+            
+            // Update progress bars
+            updateAllProgress();
+
+            // If quality filters are active and we just marked a fish as caught in a filtered quality,
+            // reapply the filters to update the table
+            const activeFilters = Array.from(document.querySelectorAll('.quality-filter.active'))
+                .map(filter => parseInt(filter.dataset.quality));
+            
+            if (activeFilters.length > 0 && activeFilters.includes(i) && circle.classList.contains('active')) {
+                // Find and call the applyQualityFilters function from app.js
+                const applyQualityFilters = window.applyQualityFilters;
+                if (typeof applyQualityFilters === 'function') {
+                    applyQualityFilters();
                 }
-                saveFishState();
-                updateRemainingFish();
-            });
+            }
         });
         container.appendChild(circle);
     });

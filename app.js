@@ -208,6 +208,9 @@ function applyQualityFilters() {
     loadFishState();
 }
 
+// Make applyQualityFilters available globally for fish.js
+window.applyQualityFilters = applyQualityFilters;
+
 // Add event listeners for quality filters
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.quality-filter').forEach(filter => {
