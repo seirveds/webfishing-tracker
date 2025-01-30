@@ -49,12 +49,12 @@ window.addEventListener('load', initializeApp);
 // Help modal functionality
 document.addEventListener('DOMContentLoaded', () => {
     const helpButton = document.getElementById('helpButton');
-    const helpModal = document.getElementById('helpModal');
-    const closeButton = document.querySelector('.close-button');
+    const helpModal = document.getElementById('helpPopup');
+    const closeButton = document.getElementById('helpClose');
 
     if (helpButton && helpModal && closeButton) {
         helpButton.addEventListener('click', () => {
-            helpModal.style.display = 'block';
+            helpModal.style.display = 'flex';
         });
 
         closeButton.addEventListener('click', () => {

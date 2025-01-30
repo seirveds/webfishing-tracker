@@ -609,6 +609,7 @@ h1 {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 1000;
+    display: flex;
     justify-content: center;
     align-items: center;
 }
@@ -616,11 +617,13 @@ h1 {
 .popup-content {
     background-color: var(--bg-color);
     padding: 20px;
-    border-radius: 8px;
-    max-width: 500px;
-    width: 90%;
-    border: 2px solid #777;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border: 4px solid var(--text);
+    box-shadow: 6px 6px 0 var(--text);
+    max-width: 90%;
+    width: 500px;
+    position: relative;
+    transform: translateY(0);
+    opacity: 1;
 }
 
 .popup-content h3 {
@@ -1720,11 +1723,13 @@ h1 {
 .popup-content {
     background-color: var(--bg-color);
     padding: 20px;
-    border-radius: 8px;
-    max-width: 500px;
-    width: 90%;
-    border: 2px solid #777;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border: 4px solid var(--text);
+    box-shadow: 6px 6px 0 var(--text);
+    max-width: 90%;
+    width: 500px;
+    position: relative;
+    transform: translateY(0);
+    opacity: 1;
 }
 
 .popup-content h3 {
