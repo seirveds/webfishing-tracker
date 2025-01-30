@@ -193,7 +193,9 @@ function applyQualityFilters() {
                 const formattedQualities = qualityNames.length > 1 
                     ? qualityNames.slice(0, -1).join(', ') + ' & ' + qualityNames[qualityNames.length - 1]
                     : qualityNames[0];
-                message.textContent = `All fish caught in ${formattedQualities} quality!`;
+                const habitatLower = habitat.toLowerCase();
+                const fishWord = habitatLower === 'trash' ? '' : ' fish';
+                message.textContent = `All ${habitatLower}${fishWord} caught in ${formattedQualities} quality!`;
                 message.style.textAlign = 'center';
                 message.style.padding = '20px';
                 message.style.fontFamily = "'Press Start 2P', cursive";
